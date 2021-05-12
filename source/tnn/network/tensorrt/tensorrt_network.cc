@@ -559,8 +559,8 @@ Status TensorRTNetwork_::InitWithoutCache(BlobMap &inputs, BlobMap &outputs, std
             for(int i: blob->GetBlobDesc().dims) {ss <<  i << ","; }
             ss << "]";
             LOGD("Adding %s as weights from constant_map to trt network\n", ss.str().c_str());
-        }            
-        
+        }
+
         auto const_layer = ConvertWeightToConstLayer(m_trt_network, buf.get());
         if (const_layer != nullptr) {
             const_layer->setName(blob_name.c_str());
@@ -574,7 +574,7 @@ Status TensorRTNetwork_::InitWithoutCache(BlobMap &inputs, BlobMap &outputs, std
 
     for (int layer_id = 0; layer_id < this->layers_.size(); layer_id++) {
         BaseLayer* cur_layer = this->layers_[layer_id];
-        nvinfer1::ILayer *cur_trt_layer = 
+        nvinfer1::ILayer *cur_trt_layer =
             dynamic_cast<TensorRTBaseLayerBuilder*>(cur_layer)->AddToNetwork(m_trt_network);
         if (cur_trt_layer == nullptr ) {
             LOGE("build trt layer for \"%s\" failed\n", cur_layer->GetLayerName().c_str());
@@ -592,7 +592,7 @@ Status TensorRTNetwork_::InitWithoutCache(BlobMap &inputs, BlobMap &outputs, std
             {
                 std::stringstream ss;
                 int nbDims = output_tensor->getDimensions().nbDims;
-                for( int d=0;d<nbDims;d++) ss << output_tensor->getDimensions().d[d] << ","; 
+                for( int d=0;d<nbDims;d++) ss << output_tensor->getDimensions().d[d] << ",";
                 ss << " blob shape:";
                 for(auto d:output->GetBlobDesc().dims) ss << d << ",";
                 LOGD("build trt layer for \"%s\", tensor shape %s\n", cur_layer->GetLayerName().c_str(), ss.str().c_str());
@@ -611,10 +611,11 @@ Status TensorRTNetwork_::InitWithoutCache(BlobMap &inputs, BlobMap &outputs, std
     }
 
     m_trt_config->setMaxWorkspaceSize(MAX_SCRATCH_MEMORY);
-    if (config_.precision == PRECISION_LOW && !this->int8_mode) {
+
+    if (config_.precision == PRECISION_LOW &&m_trt_builder->platformHasFastFp16()&& !this->int8_mode) {
         m_trt_config->setFlag(BuilderFlag::kFP16);
     }
-    if (this->int8_mode) {
+    if (this->int8_mode&&m_trt_builder->platformHasFastInt8()) {
         m_trt_config->setFlag(BuilderFlag::kINT8);
     }
     m_trt_engine = m_trt_builder->buildEngineWithConfig(*m_trt_network, *m_trt_config);
@@ -728,7 +729,7 @@ Status TensorRTNetwork_::CheckConstBlobs() {
     std::vector<std::string> const_input_blobs;
     std::vector<std::string> const_weight_blobs;
 
-    
+
     for (auto iter : net_resource_->constant_map) {
         auto blob_name = iter.first;
         Blob *blob = blob_manager_->GetBlob(blob_name);
