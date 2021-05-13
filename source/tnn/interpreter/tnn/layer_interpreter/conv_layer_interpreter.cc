@@ -36,11 +36,13 @@ Status ConvLayerInterpreter::InterpretProto(str_arr layer_cfg_arr, int start_ind
 
     // pads
     int pad_h = 0, pad_w = 0;
-    GET_INT_2(pad_h, pad_w);
-    p->pads.push_back(pad_w);
-    p->pads.push_back(pad_w);
-    p->pads.push_back(pad_h);
-    p->pads.push_back(pad_h);
+    int pad_left=0,pad_right=0,pad_top=0,pad_bot=0;
+    GET_INT_2(pad_left, pad_right);
+    GET_INT_2(pad_top, pad_bot);
+    p->pads.push_back(pad_left);
+    p->pads.push_back(pad_right);
+    p->pads.push_back(pad_top);
+    p->pads.push_back(pad_bot);
 
     // bias
     GET_INT_2(p->bias, p->pad_type);
@@ -93,8 +95,10 @@ Status ConvLayerInterpreter::SaveProto(std::ofstream& output_stream, LayerParam*
     output_stream << layer_param->strides[0] << " ";
 
     ASSERT(layer_param->pads.size() == 4);
-    output_stream << layer_param->pads[2] << " ";
-    output_stream << layer_param->pads[0] << " ";
+    output_stream << layer_param->pads[0] << " ";//left
+    output_stream << layer_param->pads[1] << " ";//right
+    output_stream << layer_param->pads[2] << " ";//top
+    output_stream << layer_param->pads[3] << " ";//bot
 
     output_stream << layer_param->bias << " ";
     output_stream << layer_param->pad_type << " ";

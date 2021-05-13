@@ -77,6 +77,11 @@ string OnnxOpConverterConv::TNNLayerParam(NodeProto& node,
     std::vector<int64_t> pads         = get_node_attr_ai(node, "pads");
     std::vector<int64_t> output_pads = get_node_attr_ai(node, "output_padding");
 
+//    DLog("%d,%d,%d,%d\n",pads[0],pads[1],pads[2],pads[3]);
+//    printf("padsize %d\n",pads.size());
+    if(pads.size()==4){
+        printf("%ld,%ld,%ld,%ld\n",pads[0],pads[1],pads[2],pads[3]);
+    }
     int pad_type = -1;
     if (auto_pad == "SAME_UPPER") {
         pad_type = 0;
@@ -117,42 +122,49 @@ string OnnxOpConverterConv::TNNLayerParam(NodeProto& node,
                     << " ";
     }
 
-    //pad
-    if (pads.size() == 1) {
-        layer_param << pads[0] << " " << pads[0] << " ";
-    } else if (pads.size() == 2) {
-        layer_param << pads[0] << " " << pads[1] << " ";
-    } else if (pads.size() == 4) {
-        if (pads[0] == pads[2] && pads[1] == pads[3]) {
-            layer_param << pads[0] << " " << pads[1] << " ";
-        } else if (pads[0] < pads[2] || pads[1] < pads[3]) {
-            pad_type = 0;//SAME UPPER
-            layer_param << pads[0] << " " << pads[1] << " ";
-        } else {
-            DLog("SAME_LOWER is unsuported, change toSAME_UPPER \n");
-            assert(0);
+    if(pad_type==-1){
+        //TODO 暂时对2D卷积这么做
+        if(pads.size()==4){
+            layer_param << pads[0] << " " << pads[1] << " "<< pads[2] << " " << pads[3] << " " ;
         }
-    } else if (pads.size() == 6) {
-        if (pads[0] == pads[3] && pads[1] == pads[4] && pads[2] == pads[5]) {
-            layer_param << pads[0] << " " << pads[1] << " " << pads[2] << " ";
-        } else if (pads[0] < pads[3] && pads[1] < pads[4] && pads[2] < pads[5]) {
-            pad_type = 0;//SAME UPPER
-            layer_param << pads[0] << " " << pads[1] << " " << pads[2] << " ";
-        } else {
-            DLog("SAME_LOWER is unsuported, change toSAME_UPPER \n");
-            assert(0);
-        }
-    } else {
-        if (auto_pad == "SAME_LOWER" || auto_pad == "SAME_UPPER" ||
-            auto_pad == "VALID" || auto_pad == "") {
-            if (kernel_shape.size() == 3) {
-                layer_param << 0 << " " << 0 << " " << 0 << " ";
+    }else{
+        //pad
+        if (pads.size() == 1) {
+            layer_param << pads[0] << " " << pads[0] << " ";
+        } else if (pads.size() == 2) {
+            layer_param << pads[0] << " " << pads[1] << " ";
+        } else if (pads.size() == 4) {
+            if (pads[0] == pads[2] && pads[1] == pads[3]) {
+                layer_param << pads[0] << " " << pads[1] << " ";
+            } else if (pads[0] < pads[1] || pads[2] < pads[3]) {
+                pad_type = 0;//SAME UPPER
+                layer_param << pads[0] << " " << pads[1] << " ";
             } else {
-                layer_param << 0 << " " << 0 << " ";
+                DLog("SAME_LOWER is unsuported, change toSAME_UPPER \n");
+                assert(0);
+            }
+        } else if (pads.size() == 6) {
+            if (pads[0] == pads[3] && pads[1] == pads[4] && pads[2] == pads[5]) {
+                layer_param << pads[0] << " " << pads[1] << " " << pads[2] << " ";
+            } else if (pads[0] < pads[3] && pads[1] < pads[4] && pads[2] < pads[5]) {
+                pad_type = 0;//SAME UPPER
+                layer_param << pads[0] << " " << pads[1] << " " << pads[2] << " ";
+            } else {
+                DLog("SAME_LOWER is unsuported, change toSAME_UPPER \n");
+                assert(0);
             }
         } else {
-            DLog("not implement\n");
-            assert(0);
+            if (auto_pad == "SAME_LOWER" || auto_pad == "SAME_UPPER" ||
+                auto_pad == "VALID" || auto_pad == "") {
+                if (kernel_shape.size() == 3) {
+                    layer_param << 0 << " " << 0 << " " << 0 << " ";
+                } else {
+                    layer_param << 0 << " " << 0 << " ";
+                }
+            } else {
+                DLog("not implement\n");
+                assert(0);
+            }
         }
     }
 
