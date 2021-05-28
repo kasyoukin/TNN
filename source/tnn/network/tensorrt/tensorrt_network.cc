@@ -630,9 +630,11 @@ Status TensorRTNetwork_::InitWithoutCache(BlobMap &inputs, BlobMap &outputs, std
     m_trt_config->setMaxWorkspaceSize(MAX_SCRATCH_MEMORY);
 
     if (config_.precision == PRECISION_LOW &&m_trt_builder->platformHasFastFp16()&& !this->int8_mode) {
+        LOGI("detect tensorrt support fp16 compute unit, precision_low is choose fp16 precision\n");
         m_trt_config->setFlag(BuilderFlag::kFP16);
     }
     if (this->int8_mode&&m_trt_builder->platformHasFastInt8()) {
+        LOGI("detect tensorrt support int8 compute unit, use fp16 precision\n");
         m_trt_config->setFlag(BuilderFlag::kINT8);
     }
     m_trt_engine = m_trt_builder->buildEngineWithConfig(*m_trt_network, *m_trt_config);
