@@ -169,7 +169,8 @@ Status TensorRTNetwork_::Init(NetworkConfig &net_config, ModelConfig &model_conf
 
     if (!test_mode) {
         size_t size = 0;
-        std::ifstream deploy_input(cache_file_name, std::ios::binary);
+        std::string cache_file_path = config_.cache_path+cache_file_name;
+        std::ifstream deploy_input(cache_file_path, std::ios::binary);
         deploy_input.seekg(0, deploy_input.end);
         size = deploy_input.tellg();
         deploy_input.seekg(0, deploy_input.beg);
@@ -417,7 +418,7 @@ Status TensorRTNetwork_::CreateExecuteContext() {
     m_trt_context = m_trt_engine->createExecutionContextWithoutDeviceMemory();
     size_t context_memory_size = (std::max)(m_trt_engine->getDeviceMemorySize(), size_t(1024));
     Status status = TNN_OK;
-    if(config_.share_memory_mode == SHARE_MEMORY_MODE_SHARE_ONE_THREAD) { 
+    if(config_.share_memory_mode == SHARE_MEMORY_MODE_SHARE_ONE_THREAD) {
         SharedMemory share_memory = SharedMemoryManager::GetSharedMemory(
                         context_memory_size, init_thread_id_, device_,
                         config_.device_id, this, status);
@@ -652,7 +653,8 @@ Status TensorRTNetwork_::InitWithoutCache(BlobMap &inputs, BlobMap &outputs, std
     if (!test_mode) {
         IHostMemory *model_stream = nullptr;
         model_stream = m_trt_engine->serialize();
-        std::ofstream deploy_output(cache_file_name, std::ofstream::binary);
+        std::string cache_file_path = config_.cache_path+cache_file_name;
+        std::ofstream deploy_output(cache_file_path, std::ofstream::binary);
         char *model_stream_ptr = reinterpret_cast<char*>(model_stream->data());
         deploy_output.write(model_stream_ptr, model_stream->size());
         deploy_output.close();
@@ -777,7 +779,7 @@ Status TensorRTNetwork_::CheckConstBlobs() {
 }
 
 void TensorRTNetwork_::OnSharedForwardMemoryChanged(void *memory) {
-    m_trt_context->setDeviceMemory(memory);    
+    m_trt_context->setDeviceMemory(memory);
 }
 
 }  //  namespace  TNN_NS
