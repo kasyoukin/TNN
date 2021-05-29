@@ -158,10 +158,11 @@ Status TensorRTNetwork_::Init(NetworkConfig &net_config, ModelConfig &model_conf
 
     std::string cache_file_name = GetCacheFileName(params_md5, inputs, outputs, min_inputs_shape,
         net_config.device_id, this->m_max_batchsize, this->int8_mode, config_.precision == PRECISION_LOW);
-    ExclFile *file_lock = new ExclFile(cache_file_name);
+    std::string cache_file_path = config_.cache_path+cache_file_name;
+    ExclFile *file_lock = new ExclFile(cache_file_path);
 
     if (test_mode || false == file_lock->Ready()) {
-        ret = InitWithoutCache(inputs, outputs, cache_file_name, net_resource, min_inputs_shape);
+        ret = InitWithoutCache(inputs, outputs, cache_file_path, net_resource, min_inputs_shape);
         if (ret != TNN_OK) {
             return ret;
         }
@@ -169,7 +170,6 @@ Status TensorRTNetwork_::Init(NetworkConfig &net_config, ModelConfig &model_conf
 
     if (!test_mode) {
         size_t size = 0;
-        std::string cache_file_path = config_.cache_path+cache_file_name;
         std::ifstream deploy_input(cache_file_path, std::ios::binary);
         deploy_input.seekg(0, deploy_input.end);
         size = deploy_input.tellg();
@@ -653,8 +653,7 @@ Status TensorRTNetwork_::InitWithoutCache(BlobMap &inputs, BlobMap &outputs, std
     if (!test_mode) {
         IHostMemory *model_stream = nullptr;
         model_stream = m_trt_engine->serialize();
-        std::string cache_file_path = config_.cache_path+cache_file_name;
-        std::ofstream deploy_output(cache_file_path, std::ofstream::binary);
+        std::ofstream deploy_output(cache_file_name, std::ofstream::binary);
         char *model_stream_ptr = reinterpret_cast<char*>(model_stream->data());
         deploy_output.write(model_stream_ptr, model_stream->size());
         deploy_output.close();
