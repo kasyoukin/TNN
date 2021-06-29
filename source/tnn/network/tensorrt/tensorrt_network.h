@@ -75,8 +75,8 @@ public:
     // @param inputs_shape_map modify input shape, if empty, it will use the
     // shape in proto
     virtual Status Init(NetworkConfig &net_config, ModelConfig &model_config,
-                        AbstractModelInterpreter* interpreter,
-                        InputShapesMap min_inputs_shape, InputShapesMap max_inputs_shape);
+        AbstractModelInterpreter* interpreter, InputShapesMap min_inputs_shape,
+        InputShapesMap max_inputs_shape, bool enable_const_folder);
 
     // @brief network forward
     virtual Status Forward();
@@ -95,12 +95,12 @@ public:
 
     std::string GetCacheFileName(std::vector<std::string> params_md5, BlobMap input_map,
         BlobMap output_map, const InputShapesMap &min_inputs_shape, int device_id, int batchsize,
-        bool int8_mode, bool use_fp16);
+        bool int8_mode, bool use_fp16, bool enable_const_folder);
 
     std::set<std::string> m_concat_blob_names;
 
 private:
-    virtual Status InitLayers(NetStructure *net_structure, NetResource *net_resource);
+    virtual Status InitLayers(NetStructure *net_structure, NetResource *net_resource, bool enable_const_folder);
 
     bool IsBlobUsed(Blob* blob);
 
